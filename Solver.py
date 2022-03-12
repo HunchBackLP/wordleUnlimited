@@ -1,8 +1,6 @@
 # lol
 import string
-from time import sleep
 import keyboard
-from wordlist import FULL_LIST
 import random
 from selenium.webdriver.common.by import By
 from selenium import webdriver
@@ -12,7 +10,7 @@ options.add_experimental_option('excludeSwitches', ['enable-logging'])
 driver = webdriver.Chrome(options=options)
 driver.get("https://www.wordleunlimited.com")
 
-with open('words.txt') as file:
+with open('words2.txt') as file:
     FULL_LIST = file.readlines()
 
 class Solver:
@@ -46,9 +44,9 @@ class Solver:
     def enter_word(self, word) -> None:
         print(f'DEBUG: {word}')
         keyboard.write(word)
-        sleep(.2)
-        keyboard.press_and_release("enter")
         
+    def press_key(self, key:str) -> None:
+        keyboard.press_and_release(key)
 
     def solve(self) -> None:
         for i in range(6):
@@ -59,8 +57,11 @@ class Solver:
                 print(f'Guess {i + 1}')
                 word = self.get_word()
                 self.enter_word(word)
+                keyboard.wait('ctrl')
+                self.press_key('enter')
                 self.filter_list()
                 #print(self.get_word_vector())
+        driver.quit()
 
     def get_current_row(self) -> list:
         """Returns the last row with filled characters"""
@@ -99,6 +100,8 @@ class Solver:
                 #print(f'{self.get_wordlist_length()}, Letter: {str(l).lower()}, Mode: {h}')
             index = index + 1
         self.update_wordlist()
+        print(f'Valid words: {self.get_wordlist_length()}')
+        print('________________________________________________')
 
     def get_word_vector(self):
         return self.word_vector
@@ -114,7 +117,10 @@ class Solver:
         self.set_wordlist(self.get_matching_words())
 
     def get_word(self):
-        return random.choice(self.get_wordlist())
+        try:
+            return random.choice(self.get_wordlist())
+        except IndexError:
+            driver.quit()
 
     def get_wordlist_length(self) -> int:
         return len(self.get_wordlist())
