@@ -1,13 +1,19 @@
 # lol
 import string
+from time import sleep
 import keyboard
 from wordlist import FULL_LIST
 import random
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 
-driver = webdriver.Chrome()
+options = webdriver.ChromeOptions()
+options.add_experimental_option('excludeSwitches', ['enable-logging'])
+driver = webdriver.Chrome(options=options)
 driver.get("https://www.wordleunlimited.com")
+
+with open('words.txt') as file:
+    FULL_LIST = file.readlines()
 
 class Solver:
     
@@ -38,17 +44,23 @@ class Solver:
         self.wordlist = liste
 
     def enter_word(self, word) -> None:
+        print(f'DEBUG: {word}')
         keyboard.write(word)
+        sleep(.2)
         keyboard.press_and_release("enter")
         
 
     def solve(self) -> None:
         for i in range(6):
-            print(f'Guess {i + 1}')
-            word = self.get_word()
-            self.enter_word(word)
-            self.filter_list()
-            print(self.get_word_vector())
+            if self.is_solved():#
+                print('SOLVED!')
+                break
+            else:
+                print(f'Guess {i + 1}')
+                word = self.get_word()
+                self.enter_word(word)
+                self.filter_list()
+                #print(self.get_word_vector())
 
     def get_current_row(self) -> list:
         """Returns the last row with filled characters"""
@@ -58,7 +70,7 @@ class Solver:
         divs = self.get_current_row().find_elements(by=By.TAG_NAME, value="div")
         letter = [div.text for div in divs]
         hints = [div.get_attribute('class') for div in divs]
-        print(f'DEBUG: Letters: {letter}, Hints: {hints}')
+        #print(f'DEBUG: Letters: {letter}, Hints: {hints}')
         return letter, hints
 
 
@@ -74,17 +86,17 @@ class Solver:
                     # if char was already removed e.g. "marry" -> two 'r' skip this letter
                     except KeyError:
                         pass
-                print(f'{self.get_wordlist_length()}, Letter: {str(l).lower()}, Mode: {h}')
+                #print(f'{self.get_wordlist_length()}, Letter: {str(l).lower()}, Mode: {h}')
             # If letter is correct remove words not having said letter in correct position
             if h == 'RowL-letter letter-correct':
                 self.set_word_vector(index, set(str(l).lower()))
-                print(f'{self.get_wordlist_length()}, Letter: {str(l).lower()}, Mode: {h}')
+                #print(f'{self.get_wordlist_length()}, Letter: {str(l).lower()}, Mode: {h}')
             if h == 'RowL-letter letter-elsewhere':
                 try:
                     self.get_word_vector()[index].remove(str(l).lower())
                 except KeyError:
                     pass
-                print(f'{self.get_wordlist_length()}, Letter: {str(l).lower()}, Mode: {h}')
+                #print(f'{self.get_wordlist_length()}, Letter: {str(l).lower()}, Mode: {h}')
             index = index + 1
         self.update_wordlist()
 
@@ -106,4 +118,11 @@ class Solver:
 
     def get_wordlist_length(self) -> int:
         return len(self.get_wordlist())
+
+    def is_solved(self) -> bool:
+        count = 0
+        for vector in self.get_word_vector():
+            if len(vector) == 1:
+                count = count + 1
+        return count == 5
 
