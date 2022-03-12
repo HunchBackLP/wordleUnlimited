@@ -1,4 +1,4 @@
-
+# lol
 import string
 import keyboard
 from wordlist import FULL_LIST
